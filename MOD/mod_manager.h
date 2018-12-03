@@ -1,28 +1,45 @@
 //插件管理系统
 #ifndef MOD_MANAGER_H
 #define MOD_MANAGER_H
-#include <queue>
+#include <map>
 #include <string>
+#include <thread>
 using std::string;
 
-#include "mod.h"
+#include "base_mod.h"
 
-class ModManager:public MOD //本身也是一个插件
+typedef BaseMod*(*Load)();
+
+class ModManager:public BaseMod //本身也是一个插件
 {
 	//插件队列
-	std::queue<MOD*> mod_queue;
-	//信息队列
-	std::queue<Message> msg_queue;
+	std::map<int,std::shared_ptr<BaseMod>> mods;
 public:
-	int load(string&mod_name); //加载一个插件
-	int unload(string&id);	   //卸载一个插件
-	int init();
-	void run();
-	ModManager();
+	static std::shared_ptr<ModManager> Instance();
+
 	virtual ~ModManager();
+	virtual void process(const Message&msg)override;
+	virtual void init()override;
+
+	void add_mod_path(const string&abs_path);
 private:
-	//
+	int mod_size;
+	int count;
+	std::vector<string> mod_paths;
+
+	static std::shared_ptr<ModManager> instance;
+
 private:
+	ModManager(const string&name);
+
+	int register_mod(BaseMod*mod);
+	int unregister_mod(BaseMod*mod);
+	int load(string&mod_name); //加载一个插件
+	int unload(int id);	   //卸载一个插件
+	//广播信息
+	int broadcast(const Message &msg);
+
+	
 };
 #endif // !MOD_MANAGER_H
 
